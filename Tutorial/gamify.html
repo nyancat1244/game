@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Chatroom with Gemini API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            background-color: #333;
+            /* Dark background */
+            color: #ccc;
+            /* Light text */
+
+        }
+
+        h1 {
+            text-align: center;
+            color: #fff;
+            /* White text for headings */
+        }
+
+        #messageForm {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        #messageInput {
+            width: 70%;
+            padding: 10px;
+            border: 1px solid #555;
+            /* Darker borders */
+            background-color: #222;
+            /* Dark input fields */
+            color: #ddd;
+            /* Light text */
+            border-radius: 5px;
+            outline: none;
+        }
+
+        #messageInput:focus {
+            border-color: dodgerblue;
+        }
+
+        #messageInput::placeholder {
+            color: #777;
+            /* Darker placeholder */
+        }
+
+        #messageInput:focus::placeholder {
+            color: transparent;
+        }
+
+        #sendMessageBtn {
+            padding: 10px 20px;
+            background-color: #555;
+            /* Darker button */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        #sendMessageBtn:hover {
+            background-color: #777;
+            /* Lighter on hover */
+        }
+
+        #messages {
+            padding: 0 20px;
+            overflow-y: scroll;
+            max-height: 300px;
+            background-color: #222;
+            /* Dark background for messages */
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            color: #ccc;
+            /* Light text for messages */
+        }
+
+        .userMessage {
+            background-color: #444;
+            /* Darker user message */
+            text-align: right;
+        }
+
+        .botMessage {
+            background-color: #555;
+            /* Darker bot message */
+            text-align: left;
+        }
+
+        #startButton:hover {
+            background: rgba(0, 0, 0, 1);
+            /* Darker background on hover */
+            box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.5);
+            /* Slightly larger shadow on hover */
+        }
+
+        #startButton {
+            padding: 15px 30px;
+            /* Increase padding for a better look */
+            font-size: 20px;
+            /* Adjust font size */
+            cursor: pointer;
+            /* Position it within the wrapper */
+            margin-bottom: 20px;
+            position: relative;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            /* Text color */
+            background: rgba(0, 0, 0, 0.8);
+            /* Same semi-transparent background as introBlock */
+            border: 1px solid #fff;
+            /* Same border as introBlock */
+            border-radius: 5px;
+            /* Rounded corners similar to introBlock */
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+            /* Subtle shadow for depth */
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Chatroom</h1>
+    <button id="startButton">Start Game</button>
+    <form id="messageForm" style="display:none;">
+        <input type="text" id="messageInput" placeholder="Type your message here..." required>
+        <button id="sendMessageBtn" type="submit">Send</button>
+    </form>
+    <div id="sceneImage" style="text-align:center; margin-top:20px;">
+        <!-- 圖片將在這裡顯示 -->
+    </div>
+    <div id="messages"></div>
+    <script>
+        var conversationHistory = [];
+
+        var apiKey = prompt("Please enter your API key:", "");
+
+        if (!apiKey) {
+            alert("API key is required to use the chatroom.");
+        } else {
+            document.getElementById('startButton').addEventListener('click', function () {
+                this.style.display = 'none';
+                document.getElementById('messageForm').style.display = 'flex';
+                conversationHistory.push({
+                    "role": 'user',
+                    "parts": [{
+                        "text": `腳本：
+                        """
+                        遊戲標題：命運之選
+                        遊戲背景
+                        達瑞爾是一位剛踏上冒險旅途的新手冒險者，他希望在這個危險的世界中找到自己的定位並結識夥伴。遊戲通過達瑞爾的互動和選擇來探索表達真實感受的重要性，並最終決定他能否成功屠龍。
+
+                        主要角色：
+                        達瑞爾：主角，新手冒險者。
+                        萊恩：達瑞爾的夥伴，開朗活潑，擅長近戰。
+                        菲奧娜：達瑞爾的夥伴，溫和且善於聆聽，擅長弓箭。
+                        遊戲腳本流程
+
+                        開場：
+                        （場景：冒險者公會）
+                        達瑞爾第一次踏進冒險者公會，遇見萊恩邀請自己加入他們的小隊。
+                        選擇A：接受邀請。
+                        選擇B：婉拒，說自己需要更多時間準備。
+
+                        公會內的互動：
+                        （場景：冒險者公會）
+                        若選擇A，達瑞爾決定接受萊恩的邀請，並加入了他的隊伍。萊恩帶著達瑞爾來到公會的角落，介紹另一位成員。
+                         選擇A1：告訴萊恩自己會準備好。 （選擇後進入小鎮集市劇情）
+                         選擇A2：表達自己有點緊張，希望得到更多指導。（選擇後進入小鎮集市劇情）
+
+                        若選擇B，達瑞爾感覺自己需要更多時間準備，於是婉拒了萊恩的邀請，決定先在城鎮四處探索，以更好地了解自己的能力和環境。在小鎮集市中遇見了菲奧娜，一位友善的弓箭手。菲奧娜詢問達瑞爾需不需要幫忙。
+                         選擇B1：請求菲奧娜的指導。（選擇後進入小鎮集市劇情）
+                         選擇B2：禮貌地謝絕，表示自己只是來看看。（選擇後進入結局，根據玩家的選擇進行反思及回顧）
+
+                        小鎮集市：
+                        （場景：小鎮集市）
+                        菲奧娜帶著達瑞爾在集市旁的空地進行了基本的弓箭射擊和戰鬥技巧訓練。達瑞爾感受到了菲奧娜的耐心和專業。
+                        選擇A3：認為自己有機會與夥伴打敗惡龍。（選擇後進入結局，根據玩家的選擇進行反思及回顧）
+                        選擇B3：失去信心，放棄冒險者這條路。（選擇後進入結局，根據玩家的選擇進行反思及回顧）
+
+                        結局：
+                        開放表達結局：如果達瑞爾選擇在關鍵時刻表達自己的感受並積極尋求幫助（如選擇A1、B1、A3），他將與萊恩、菲奧娜建立深厚的友誼和合作關係。這樣的小隊默契十足，最終成功討伐惡龍，達成任務。
+
+
+
+                        壓抑感受結局：如果達瑞爾選擇壓抑自己的感受並避免尋求幫助（如選擇B2、B3），他將在冒險途中感到孤立，與隊友之間的默契不夠，最終無法成功討伐惡龍，任務失敗。
+
+                        遊戲結尾
+                        遊戲最後將根據達瑞爾的選擇提供一段反思，強調在人際關係中開放表達自己感受的重要性，以及這種溝通方式對個人和團隊的影響。"""
+
+                        請根據腳本中的對話，根據"""開場"""到"""公會內的互動"""最後到"""小鎮集市"""進行，開始一個文字冒險遊戲，每一次的對話，都需要呈現以下格式與資訊：
+                        <場景>：目前故事的背景為何
+                        <選擇>：在每一次的對話中，你都會根據腳本給我可以選擇的動作，根據我選擇的動作繼續接下來的劇情，整體劇情會圍繞腳本發展。
+
+                        根據我的選擇進行故事就好，不要幫我做出選擇`
+                    }]
+                });
+                sendMessage();
+            });
+
+            document.getElementById('messageForm').addEventListener('submit', function (event) {
+                event.preventDefault();
+                var message = document.getElementById('messageInput').value;
+                addToConversationHistory('user', message);
+                displayMessage(message, 'user');
+                sendMessage();
+                document.getElementById('messageInput').value = '';
+            });
+        }
+
+        function sendMessage() {
+            fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=' + apiKey, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    "contents": conversationHistory,
+                    "safetySettings": [
+                        {
+                            "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                            "threshold": "BLOCK_ONLY_HIGH"
+                        },
+                        {
+                            "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                            "threshold": "BLOCK_ONLY_HIGH"
+                        },
+                    ],
+                    "generationConfig": {
+                        "stopSequences": [
+                            ""
+                        ],
+                        "temperature": 1.0,
+                        "maxOutputTokens": 2048,
+                        "topP": 0.8,
+                        "topK": 10
+                    }
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    var responseText = data.candidates[0].content.parts[0].text;
+                    addToConversationHistory('model', responseText);
+                    displayMessage(responseText, 'bot');
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function addToConversationHistory(role, text) {
+            conversationHistory.push({
+                "role": role,
+                "parts": [{
+                    "text": text
+                }]
+            });
+        }
+
+        function displayMessage(message, sender) {
+            var messageElement = document.createElement('div');
+            var formatMessage = formatText(message);
+            messageElement.innerHTML = formatMessage;
+            messageElement.classList.add('message');
+            if (sender === 'user') {
+                messageElement.classList.add('userMessage');
+            } else {
+                messageElement.classList.add('botMessage');
+            }
+            document.getElementById('messages').appendChild(messageElement);
+            document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+            updateSceneImage(message);
+        }
+
+        function updateSceneImage(responseText) {
+            let sceneMatch = responseText.match(/場景：(.*?)\s/);
+            if (sceneMatch && sceneMatch[1]) {
+                let scene = sceneMatch[1];
+                console.log(scene);
+                if (scene.includes("冒險者公會")) {
+                    document.getElementById('sceneImage').innerHTML = '<img src="../img/guild.jpeg" alt="Guild style="width:500px;">';
+                } else if (scene.includes("小鎮集市")) {
+                    document.getElementById('sceneImage').innerHTML = '<img src="../img/market.jpeg" alt="Market" style="width:500px;">';
+                } else if (scene.includes("小鎮的酒館")) {
+                    document.getElementById('sceneImage').innerHTML = '<img src="../img/guildbar.jpeg" alt="Guild Bar" style="width:500px;">';
+                } else {
+                    document.getElementById('sceneImage').innerHTML = '';
+                }
+            }
+        }
+
+        function formatText(text) {
+            let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<br><strong>$1</strong>');
+            formattedText = formattedText.replace(/\*(.*?)\s/g, '<br>$1');
+            return formattedText;
+        }
+    </script>
+</body>
+
+</html>
